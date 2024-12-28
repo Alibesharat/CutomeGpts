@@ -19,7 +19,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -29,9 +28,12 @@ import { LockKeyhole } from "lucide-react";
 import { ArrowUpRight } from "lucide-react";
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 
-// Update the schema
+// Add at the top of the file after imports
+const [isBlinking, setIsBlinking] = useState(false);
+
+// 1. First fix the schema name to match intended use
 const AuthFormSchema = z.object({
-  openaiAPIKey: z.string().min(1, { message: "API key is required" }),
+  phoneNumber: z.string().min(1, { message: "Phone number is required" }),
 });
 
 export function Auth() {
@@ -80,22 +82,32 @@ export function AuthDialog({
   onAuthComplete: () => void;
 }) {
   const { pgState, dispatch } = usePlaygroundState();
+  // 2. Update the useForm hook with correct type and defaultValue
   const form = useForm<z.infer<typeof AuthFormSchema>>({
     resolver: zodResolver(AuthFormSchema),
     defaultValues: {
-      phoneNumber: "",
+      phoneNumber: "",  // matches schema field name
     },
   });
 
   // Add error state
   const [error404, setError404] = useState(false);
 
+  // Add useEffect to handle error animation
+  useEffect(() => {
+    if (error404) {
+      setIsBlinking(true);
+      const timer = setTimeout(() => setIsBlinking(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [error404]);
+
   // Add this useEffect hook to watch for changes in pgState.openaiAPIKey
   useEffect(() => {
     form.setValue("phoneNumber", pgState.openaiAPIKey || "");
   }, [pgState.openaiAPIKey, form]);
 
-  // Update onSubmit function
+  // 3. Update the onSubmit function parameter type
   async function onSubmit(values: z.infer<typeof AuthFormSchema>) {
     try {
       const response = await fetch(
@@ -161,7 +173,7 @@ export function AuthDialog({
                   control={form.control}
                   name="phoneNumber"
                   render={({ field }) => (
-                    <FormItem className="text-right">
+                    <FormItem className="text-left">
                       <div className="flex flex-col gap-2">
                         <FormLabel className="font-semibold text-sm whitespace-nowrap text-right">
                           برای اتصال شماره موبایل خود را وارد کنید
@@ -170,7 +182,7 @@ export function AuthDialog({
                           <Button type="submit">اتصال</Button>
                           <FormControl className="w-full">
                             <Input
-                              className="w-full text-right"
+                              className="w-full text-left"
                               placeholder="شماره موبایل (مثال: 09120674032)"
                               {...field}
                               dir="rtl"
@@ -184,7 +196,11 @@ export function AuthDialog({
                 />
                 <DialogDescription className="text-xs py-2 flex justify-between items-center">
                   <div className="flex items-center gap-2 flex-1">
-                    <span className="font-semibold">
+                    <span 
+                      className={`font-semibold ${
+                        isBlinking ? 'animate-[blink_0.5s_ease-in-out_3]' : ''
+                      } ${error404 ? 'text-red-500' : ''}`}
+                    >
                       {error404 ? (
                         "شما هنوز ثبت نام نکرده اید! لطفا ابتدا در سایت ثبت نام کنید"
                       ) : (

@@ -86,3 +86,20 @@ html {
   font-weight: 700;
   font-style: normal;
 }
+
+
+
+
+@font-face {
+  font-family: 'Shabnam';
+  src: url('/fonts/Shabnam.woff2') format('woff2'),
+       url('/fonts/Shabnam.woff') format('woff'),
+       url('/fonts/Shabnam.ttf') format('truetype');
+}
+
+
+body,p,h1,h2,h3,h4,h5,h6,span,div,button,textarea,input,select,option,label,legend,fieldset,pre,code,blockquote,th,td,ul,ol,li,dl,dt,dd,table,caption,form,iframe,header,footer,nav,section,article,aside,figure,figcaption,main,summary,details,mark,menuitem,menu {
+  font-family: 'Shabnam', sans-serif;
+}
+
+

@@ -1,4 +1,4 @@
-import "./globals.css";
+import "./globals.css?v2";
 import { PlaygroundStateProvider } from "@/hooks/use-playground-state";
 import { ConnectionProvider } from "@/hooks/use-connection";
 import { TooltipProvider } from "@/components/ui/tooltip";
