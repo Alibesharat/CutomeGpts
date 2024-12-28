@@ -25,13 +25,8 @@ import { useForm } from "react-hook-form";
 import { ellipsisMiddle } from "@/lib/utils";
 import { AuthBanner } from "./authBanner";
 import { LockKeyhole } from "lucide-react";
-import { ArrowUpRight } from "lucide-react";
-import { GitHubLogoIcon } from "@radix-ui/react-icons";
 
-// Add at the top of the file after imports
-const [isBlinking, setIsBlinking] = useState(false);
-
-// 1. First fix the schema name to match intended use
+// Schema definition (outside component)
 const AuthFormSchema = z.object({
   phoneNumber: z.string().min(1, { message: "Phone number is required" }),
 });
@@ -39,6 +34,8 @@ const AuthFormSchema = z.object({
 export function Auth() {
   const { pgState, dispatch, showAuthDialog, setShowAuthDialog } =
     usePlaygroundState();
+  // Move useState inside component
+  const [isBlinking, setIsBlinking] = useState(false);
 
   const onLogout = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -82,18 +79,9 @@ export function AuthDialog({
   onAuthComplete: () => void;
 }) {
   const { pgState, dispatch } = usePlaygroundState();
-  // 2. Update the useForm hook with correct type and defaultValue
-  const form = useForm<z.infer<typeof AuthFormSchema>>({
-    resolver: zodResolver(AuthFormSchema),
-    defaultValues: {
-      phoneNumber: "",  // matches schema field name
-    },
-  });
-
-  // Add error state
+  const [isBlinking, setIsBlinking] = useState(false);
   const [error404, setError404] = useState(false);
 
-  // Add useEffect to handle error animation
   useEffect(() => {
     if (error404) {
       setIsBlinking(true);
@@ -101,6 +89,14 @@ export function AuthDialog({
       return () => clearTimeout(timer);
     }
   }, [error404]);
+
+  // 2. Update the useForm hook with correct type and defaultValue
+  const form = useForm<z.infer<typeof AuthFormSchema>>({
+    resolver: zodResolver(AuthFormSchema),
+    defaultValues: {
+      phoneNumber: "", // matches schema field name
+    },
+  });
 
   // Add this useEffect hook to watch for changes in pgState.openaiAPIKey
   useEffect(() => {
@@ -113,10 +109,10 @@ export function AuthDialog({
       const response = await fetch(
         `http://localhost:5129/api/AppUser/GetAccessToken/${values.phoneNumber}`,
         {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'accept': '*/*'
-          }
+            accept: "*/*",
+          },
         }
       );
       if (response.status === 404) {
@@ -128,10 +124,10 @@ export function AuthDialog({
       onOpenChange(false);
       onAuthComplete();
     } catch (error) {
-      console.error('Error fetching API key:', error);
-      form.setError('phoneNumber', { 
-        type: 'manual',
-        message: 'Failed to fetch API key. Please try again.' 
+      console.error("Error fetching API key:", error);
+      form.setError("phoneNumber", {
+        type: "manual",
+        message: "Failed to fetch API key. Please try again.",
       });
     }
   }
@@ -178,14 +174,14 @@ export function AuthDialog({
                         <FormLabel className="font-semibold text-sm whitespace-nowrap text-right">
                           برای اتصال شماره موبایل خود را وارد کنید
                         </FormLabel>
-                        <div className="flex gap-2 w-full">
+                        <div className="flex gap-2 w-full" dir="ltr">
                           <Button type="submit">اتصال</Button>
                           <FormControl className="w-full">
                             <Input
-                              className="w-full text-left"
+                              className="w-full text-right"
                               placeholder="شماره موبایل (مثال: 09120674032)"
                               {...field}
-                              dir="rtl"
+                             
                             />
                           </FormControl>
                         </div>
@@ -194,18 +190,16 @@ export function AuthDialog({
                     </FormItem>
                   )}
                 />
-                <DialogDescription className="text-xs py-2 flex justify-between items-center">
-                  <div className="flex items-center gap-2 flex-1">
-                    <span 
+                <DialogDescription className="text-xs py-2 flex justify-between items-center text-center">
+                  <div className="flex items-center gap-2 flex-1 text-center">
+                    <span
                       className={`font-semibold ${
-                        isBlinking ? 'animate-[blink_0.5s_ease-in-out_3]' : ''
-                      } ${error404 ? 'text-red-500' : ''}`}
+                        isBlinking ? "animate-[blink_0.5s_ease-in-out_3]" : ""
+                      } ${error404 ? "text-red-500" : ""}`}
                     >
-                      {error404 ? (
-                        "شما هنوز ثبت نام نکرده اید! لطفا ابتدا در سایت ثبت نام کنید"
-                      ) : (
-                        "تمام اطلاعات شما محفوظ میماند"
-                      )}
+                      {error404
+                        ? "شما هنوز ثبت نام نکرده اید! لطفا ابتدا در سایت ثبت نام کنید"
+                        : "تمام اطلاعات شما محفوظ میماند"}
                     </span>
                     <LockKeyhole className="h-3 w-3 flex-shrink-0" />
                   </div>
