@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { usePlaygroundState } from "@/hooks/use-playground-state";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +29,7 @@ import { LockKeyhole } from "lucide-react";
 import { ArrowUpRight } from "lucide-react";
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 
+// Update the schema
 const AuthFormSchema = z.object({
   openaiAPIKey: z.string().min(1, { message: "API key is required" }),
 });
@@ -82,25 +83,52 @@ export function AuthDialog({
   const form = useForm<z.infer<typeof AuthFormSchema>>({
     resolver: zodResolver(AuthFormSchema),
     defaultValues: {
-      openaiAPIKey: pgState.openaiAPIKey || "",
+      phoneNumber: "",
     },
   });
 
+  // Add error state
+  const [error404, setError404] = useState(false);
+
   // Add this useEffect hook to watch for changes in pgState.openaiAPIKey
   useEffect(() => {
-    form.setValue("openaiAPIKey", pgState.openaiAPIKey || "");
+    form.setValue("phoneNumber", pgState.openaiAPIKey || "");
   }, [pgState.openaiAPIKey, form]);
 
-  function onSubmit(values: z.infer<typeof AuthFormSchema>) {
-    dispatch({ type: "SET_API_KEY", payload: values.openaiAPIKey || null });
-    onOpenChange(false);
-    onAuthComplete();
+  // Update onSubmit function
+  async function onSubmit(values: z.infer<typeof AuthFormSchema>) {
+    try {
+      const response = await fetch(
+        `http://localhost:5129/api/AppUser/GetAccessToken/${values.phoneNumber}`,
+        {
+          method: 'GET',
+          headers: {
+            'accept': '*/*'
+          }
+        }
+      );
+      if (response.status === 404) {
+        setError404(true);
+        return;
+      }
+      const apiKey = await response.text();
+      dispatch({ type: "SET_API_KEY", payload: apiKey });
+      onOpenChange(false);
+      onAuthComplete();
+    } catch (error) {
+      console.error('Error fetching API key:', error);
+      form.setError('phoneNumber', { 
+        type: 'manual',
+        message: 'Failed to fetch API key. Please try again.' 
+      });
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="sm:max-w-md p-0 border-0 rounded-lg overflow-hidden max-h-[90vh] flex flex-col"
+        dir="rtl"
         isModal={true}
       >
         <div className="overflow-y-auto">
@@ -109,87 +137,61 @@ export function AuthDialog({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="flex flex-col gap-4"
+                className="flex flex-col gap-4 text-right"
+                dir="rtl"
               >
-                <DialogHeader className="gap-2">
-                  <DialogTitle>OpenAI Realtime API Playground</DialogTitle>
-                  <DialogDescription>
-                    Try out OpenAI&apos;s new Realtime API right from your
-                    browser with this playground built on{" "}
-                    <a
-                      href="https://github.com/livekit/agents"
-                      target="_blank"
-                      className="underline"
-                    >
-                      LiveKit Agents
-                    </a>
-                    .
+                <DialogHeader className="gap-2 text-right">
+                  <DialogTitle className="text-center">Reload GPT </DialogTitle>
+                  <DialogDescription className="text-right">
+                    ریلود جی پی تی ، زبان جدیدی روی مغز شما بارگذاری میکند
                   </DialogDescription>
-                  <DialogDescription>
-                    You must have a valid{" "}
+                  <DialogDescription className="text-right">
+                    اگر ثبت نام نکرده اید از اینجا ثبت نام کنید{" "}
                     <a
-                      href="https://platform.openai.com/api-keys"
+                      href="https://iranexpedia.ir/reloadgpt"
                       target="_blank"
                       className="underline text-oai-green"
                     >
-                      OpenAI API key
-                    </a>{" "}
-                    to connect the playground to your own OpenAI platform
-                    account.
+                      ReloadGpt
+                    </a>
                   </DialogDescription>
                 </DialogHeader>
                 <div className="bg-black/10 h-[1px] w-full" />
                 <FormField
                   control={form.control}
-                  name="openaiAPIKey"
+                  name="phoneNumber"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="text-right">
                       <div className="flex flex-col gap-2">
-                        <FormLabel className="font-semibold text-sm whitespace-nowrap">
-                          Enter your{" "}
-                          <a
-                            href="https://platform.openai.com/api-keys"
-                            target="_blank"
-                            className="inline-flex items-center text-oai-green underline"
-                          >
-                            OpenAI API Key
-                            <ArrowUpRight className="h-4 w-4 ml-1" />
-                          </a>
+                        <FormLabel className="font-semibold text-sm whitespace-nowrap text-right">
+                          برای اتصال شماره موبایل خود را وارد کنید
                         </FormLabel>
                         <div className="flex gap-2 w-full">
+                          <Button type="submit">اتصال</Button>
                           <FormControl className="w-full">
                             <Input
-                              className="w-full"
-                              placeholder="OpenAI API Key"
+                              className="w-full text-right"
+                              placeholder="شماره موبایل (مثال: 09120674032)"
                               {...field}
+                              dir="rtl"
                             />
                           </FormControl>
-                          <Button type="submit">Connect</Button>
                         </div>
                       </div>
-                      <FormMessage />
+                      <FormMessage className="text-right" />
                     </FormItem>
                   )}
                 />
                 <DialogDescription className="text-xs py-2 flex justify-between items-center">
                   <div className="flex items-center gap-2 flex-1">
-                    <LockKeyhole className="h-3 w-3 flex-shrink-0" />
                     <span className="font-semibold">
-                      Your key is stored only in your browser&apos;s
-                      LocalStorage.
+                      {error404 ? (
+                        "شما هنوز ثبت نام نکرده اید! لطفا ابتدا در سایت ثبت نام کنید"
+                      ) : (
+                        "تمام اطلاعات شما محفوظ میماند"
+                      )}
                     </span>
-                  </div>
-
-                  <div className="flex items-center flex-1 justify-end">
-                    <a
-                      href="https://github.com/livekit-examples/realtime-playground"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline flex items-center gap-1"
-                    >
-                      <GitHubLogoIcon className="h-5 w-5" />
-                      View source on GitHub
-                    </a>
+                    <LockKeyhole className="h-3 w-3 flex-shrink-0" />
                   </div>
                 </DialogDescription>
               </form>
